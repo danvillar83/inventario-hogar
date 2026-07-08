@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Abarrotes y Gastos Hogar</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --warning: #dc2626;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1, h2 { margin-bottom: 20px; color: #0f172a; }
+        
+        /* Dashboard de Gastos */
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); }
+        .stat-card.alert { border-left-color: var(--warning); }
+        .stat-label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
+
+        /* Formularios */
+        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 100%; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        button:hover { opacity: 0.9; }
+
+        /* Tablas */
+        .table-container { overflow-x: auto; background: var(--card); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; color: #475569; font-weight: 600; }
+        
+        /* Estados de stock */
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .badge.ok { background: #dcfce7; color: #15803d; }
+        .badge.low { background: #fee2e2; color: #b91c1c; }
+        
+        .action-btn { background: #ef4444; padding: 5px 10px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Inventario y Gastos de Alimentos</h1>
+
+    <!-- Resumen de datos -->
+    <div class="dashboard">
+        <div class="stat-card">
+            <div class="stat-label">Gasto Mensual Estimado</div>
+            <div id="totalGasto" class="stat-value">$0</div>
+        </div>
+        <div class="stat-card alert">
+            <div id="productosFaltantesCount" class="stat-label">Productos Faltantes</div>
+            <div id="totalFaltantes" class="stat-value">0</div>
+        </div>
+    </div>
+
+    <!-- Agregar Producto -->
+    <div class="card">
+        <h2>Añadir / Actualizar Producto</h2>
+        <form id="productoForm" class="form-grid">
+            <input type="text" id="nombre" placeholder="Nombre del producto (ej: Arroz)" required>
+            <input type="number" id="cantidadMinima" placeholder="Cant. Mínima" min="0" required>
+            <input type="number" id="cantidadActual" placeholder="Cant. Actual" min="0" required>
+            <input type="number" id="precioUnitario" placeholder="Precio Estimado ($)" min="0">
+            <button type="submit">Guardar</button>
+        </form>
+    </div>
+
+    <!-- Lista de Inventario -->
+    <h2>Mi Inventario</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Mínimo Requerido</th>
+                    <th>Stock Actual</th>
+                    <th>Falta Comprar</th>
+                    <th>Precio Est.</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="inventarioTabla">
+                <!-- Se llena con JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Cargar datos iniciales desde LocalStorage para que no se borren al refrescar
+    let inventario = JSON.parse(localStorage.getItem('inventario_hogar')) || [];
+
+    const form = document.getElementById('productoForm');
+    const tabla = document.getElementById('inventarioTabla');
+
+    // Guardar o Actualizar Producto
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const nombre = document.getElementById('nombre').value.trim();
+        const cantidadMinima = parseFloat(document.getElementById('cantidadMinima').value);
+        const cantidadActual = parseFloat(document.getElementById('cantidadActual').value);
+        const precioUnitario = parseFloat(document.getElementById('precioUnitario').value) || 0;
+
+        // Si el producto ya existe, lo actualizamos, si no, lo creamos
+        const index = inventario.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+        
+        if (index !== -1) {
+            inventario[index] = { nombre, cantidadMinima, cantidadActual, precioUnitario };
+        } else {
+            inventario.push({ nombre, cantidadMinima, cantidadActual, precioUnitario });
+        }
+
+        actualizarApp();
+        form.reset();
+    });
+
+    // Eliminar Producto
+    function eliminarProducto(index) {
+        inventario.splice(index, 1);
+        actualizarApp();
+    }
+
+    // Cálculos y renderizado de la interfaz
+    function actualizarApp() {
+        // Guardar en el almacenamiento del navegador
+        localStorage.setItem('inventario_hogar', JSON.stringify(inventario));
+        
+        tabla.innerHTML = '';
+        let totalMensual = 0;
+        let faltantesContador = 0;
+
+        inventario.forEach((producto, index) => {
+            // Regla solicitada: Calcular la cantidad necesaria para volver al mínimo
+            let faltaComprar = producto.cantidadMinima - producto.cantidadActual;
+            if (faltaComprar < 0) faltaComprar = 0; // Si hay de más, no se compra
+
+            // Calcular el costo de lo que falta por comprar
+            const costoFaltante = faltaComprar * producto.precioUnitario;
+            
+            // Si el stock actual es menor al mínimo, se marca como alerta
+            const estadoClase = producto.cantidadActual < producto.cantidadMinima ? 'low' : 'ok';
+            const estadoTexto = producto.cantidadActual < producto.cantidadMinima ? 'Falta Stock' : 'Abastecido';
+            
+            if (producto.cantidadActual < producto.cantidadMinima) {
+                faltantesContador++;
+            }
+
+            // Sumamos el valor total del inventario ideal (lo que gastas al mes manteniendo tus mínimos)
+            totalMensual += (producto.cantidadMinima * producto.precioUnitario);
+
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td><strong>${producto.nombre}</strong></td>
+                <td>${producto.cantidadMinima}</td>
+                <td>${producto.cantidadActual}</td>
+                <td><span style="font-weight: bold; color: ${faltaComprar > 0 ? 'var(--warning)' : 'inherit'}">${faltaComprar}</span></td>
+                <td>$${producto.precioUnitario.toLocaleString()}</td>
+                <td><span class="badge ${estadoClase}">${estadoTexto}</span></td>
+                <td><button class="action-btn" onclick="eliminarProducto(${index})">Eliminar</button></td>
+            `;
+            tabla.appendChild(fila);
+        });
+
+        // Actualizar tarjetas de reporte
+        document.getElementById('totalGasto').innerText = `$${totalMensual.toLocaleString()}`;
+        document.getElementById('totalFaltantes').innerText = faltantesContador;
+    }
+
+    // Inicializar al cargar la página
+    actualizarApp();
+</script>
+
+</body>
+</html>
