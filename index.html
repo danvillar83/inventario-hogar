@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Abarrotes y Gastos Hogar</title>
+    <title>Control de Abarrotes, Gastos y Checklist</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -12,100 +12,139 @@
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #1e293b;
+            --muted: #64748b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
         h1, h2 { margin-bottom: 20px; color: #0f172a; }
         
         /* Dashboard de Gastos */
-        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .stat-card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); }
         .stat-card.alert { border-left-color: var(--warning); }
-        .stat-label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+        .stat-card.shopping { border-left-color: #8b5cf6; }
+        .stat-label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; }
         .stat-value { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
 
-        /* Formularios */
-        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        /* Formularios y Paneles */
+        .grid-layout { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px; }
+        @media (min-width: 768px) {
+            .grid-layout { grid-template-columns: 1fr 2fr; }
+        }
+
+        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: fit-content; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
         input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 100%; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; }
         button:hover { opacity: 0.9; }
 
-        /* Tablas */
-        .table-container { overflow-x: auto; background: var(--card); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        /* Tablas y Listas */
+        .table-container { overflow-x: auto; background: var(--card); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 30px; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
         th { background: #f1f5f9; color: #475569; font-weight: 600; }
         
-        /* Estados de stock */
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        /* Estados de stock y checklist */
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-block; }
         .badge.ok { background: #dcfce7; color: #15803d; }
         .badge.low { background: #fee2e2; color: #b91c1c; }
         
-        .action-btn { background: #ef4444; padding: 5px 10px; font-size: 0.8rem; }
+        .action-btn { background: #ef4444; padding: 6px 10px; font-size: 0.8rem; color: white; border: none; border-radius: 4px; cursor: pointer; width: auto; }
+        
+        /* Estilos específicos para el Checklist */
+        .chk-cell { text-align: center; width: 60px; }
+        .chk-box { width: 20px; height: 20px; cursor: pointer; margin: 0 auto; display: block; }
+        
+        /* Fila tachada cuando está comprado */
+        .fila-comprada { background-color: #f8fafc; color: #94a3b8; }
+        .fila-comprada strong { color: #94a3b8; }
+        .fila-comprada .badge { background: #f1f5f9; color: #94a3b8; }
+        .fila-comprada td { text-decoration: line-through; text-decoration-color: #cbd5e1; }
+        .fila-comprada .no-strike { text-decoration: none; display: inline-block; }
+
+        .btn-limpiar { background: #64748b; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Inventario y Gastos de Alimentos</h1>
+    <h1>Inventario Inteligente y Lista de Compras</h1>
 
-    <!-- Resumen de datos -->
     <div class="dashboard">
         <div class="stat-card">
-            <div class="stat-label">Gasto Mensual Estimado</div>
+            <div class="stat-label">Presupuesto Despensa Llena</div>
             <div id="totalGasto" class="stat-value">$0</div>
         </div>
         <div class="stat-card alert">
-            <div id="productosFaltantesCount" class="stat-label">Productos Faltantes</div>
+            <div class="stat-label">Productos con Stock Bajo</div>
             <div id="totalFaltantes" class="stat-value">0</div>
+        </div>
+        <div class="stat-card shopping">
+            <div class="stat-label">Costo Carrito de Compras</div>
+            <div id="totalCarrito" class="stat-value">$0</div>
         </div>
     </div>
 
-    <!-- Agregar Producto -->
-    <div class="card">
-        <h2>Añadir / Actualizar Producto</h2>
-        <form id="productoForm" class="form-grid">
-            <input type="text" id="nombre" placeholder="Nombre del producto (ej: Arroz)" required>
-            <input type="number" id="cantidadMinima" placeholder="Cant. Mínima" min="0" required>
-            <input type="number" id="cantidadActual" placeholder="Cant. Actual" min="0" required>
-            <input type="number" id="precioUnitario" placeholder="Precio Estimado ($)" min="0">
-            <button type="submit">Guardar</button>
-        </form>
-    </div>
+    <div class="grid-layout">
+        <div class="card">
+            <h2>Producto</h2>
+            <form id="productoForm">
+                <div class="form-group">
+                    <label>Nombre del Producto</label>
+                    <input type="text" id="nombre" placeholder="Ej: Arroz" required>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad Mínima Requerida</label>
+                    <input type="number" id="cantidadMinima" placeholder="Mínimo en casa" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad Actual</label>
+                    <input type="number" id="cantidadActual" placeholder="Stock hoy" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Precio Unitario ($)</label>
+                    <input type="number" id="precioUnitario" placeholder="Precio est." min="0" value="0">
+                </div>
+                <button type="submit">Guardar Producto</button>
+            </form>
+            <button class="btn-limpiar" onclick="desmarcarTodo()">Desmarcar Todo el Checklist</button>
+        </div>
 
-    <!-- Lista de Inventario -->
-    <h2>Mi Inventario</h2>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Mínimo Requerido</th>
-                    <th>Stock Actual</th>
-                    <th>Falta Comprar</th>
-                    <th>Precio Est.</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="inventarioTabla">
-                <!-- Se llena con JavaScript -->
-            </tbody>
-        </table>
+        <div>
+            <h2>Inventario & Checklist de Compras</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="chk-cell">¿Comprar?</th>
+                            <th>Producto</th>
+                            <th>Mínimo</th>
+                            <th>Actual</th>
+                            <th>Falta</th>
+                            <th>Precio Est.</th>
+                            <th>Estado</th>
+                            <th class="chk-cell">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventarioTabla">
+                        </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // Cargar datos iniciales desde LocalStorage para que no se borren al refrescar
-    let inventario = JSON.parse(localStorage.getItem('inventario_hogar')) || [];
+    // Recuperar base de datos e historial de checks de LocalStorage
+    let inventario = JSON.parse(localStorage.getItem('inventario_hogar_v2')) || [];
 
     const form = document.getElementById('productoForm');
     const tabla = document.getElementById('inventarioTabla');
 
-    // Guardar o Actualizar Producto
+    // Guardar o Actualizar
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         
@@ -114,43 +153,55 @@
         const cantidadActual = parseFloat(document.getElementById('cantidadActual').value);
         const precioUnitario = parseFloat(document.getElementById('precioUnitario').value) || 0;
 
-        // Si el producto ya existe, lo actualizamos, si no, lo creamos
         const index = inventario.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
         
         if (index !== -1) {
-            inventario[index] = { nombre, cantidadMinima, cantidadActual, precioUnitario };
+            // Preservamos el estado del check si ya existía
+            const comprado = inventario[index].comprado || false;
+            inventario[index] = { nombre, cantidadMinima, cantidadActual, precioUnitario, comprado };
         } else {
-            inventario.push({ nombre, cantidadMinima, cantidadActual, precioUnitario });
+            inventario.push({ nombre, cantidadMinima, cantidadActual, precioUnitario, comprado: false });
         }
 
         actualizarApp();
         form.reset();
     });
 
-    // Eliminar Producto
-    function eliminarProducto(index) {
-        inventario.splice(index, 1);
+    // Alternar el estado de comprado del checklist
+    function toggleComprado(index) {
+        inventario[index].comprado = !inventario[index].comprado;
         actualizarApp();
     }
 
-    // Cálculos y renderizado de la interfaz
+    // Desmarcar todos los productos para un nuevo mes/semana
+    function desmarcarTodo() {
+        if(confirm("¿Quieres desmarcar todos los productos del checklist?")) {
+            inventario.forEach(p => p.comprado = false);
+            actualizarApp();
+        }
+    }
+
+    // Eliminar registro
+    function eliminarProducto(index) {
+        if(confirm("¿Eliminar este producto permanentemente?")) {
+            inventario.splice(index, 1);
+            actualizarApp();
+        }
+    }
+
+    // Renderizar y Calcular
     function actualizarApp() {
-        // Guardar en el almacenamiento del navegador
-        localStorage.setItem('inventario_hogar', JSON.stringify(inventario));
+        localStorage.setItem('inventario_hogar_v2', JSON.stringify(inventario));
         
         tabla.innerHTML = '';
-        let totalMensual = 0;
+        let totalMensualLleno = 0;
         let faltantesContador = 0;
+        let costoCarritoCompras = 0;
 
         inventario.forEach((producto, index) => {
-            // Regla solicitada: Calcular la cantidad necesaria para volver al mínimo
             let faltaComprar = producto.cantidadMinima - producto.cantidadActual;
-            if (faltaComprar < 0) faltaComprar = 0; // Si hay de más, no se compra
+            if (faltaComprar < 0) faltaComprar = 0;
 
-            // Calcular el costo de lo que falta por comprar
-            const costoFaltante = faltaComprar * producto.precioUnitario;
-            
-            // Si el stock actual es menor al mínimo, se marca como alerta
             const estadoClase = producto.cantidadActual < producto.cantidadMinima ? 'low' : 'ok';
             const estadoTexto = producto.cantidadActual < producto.cantidadMinima ? 'Falta Stock' : 'Abastecido';
             
@@ -158,28 +209,41 @@
                 faltantesContador++;
             }
 
-            // Sumamos el valor total del inventario ideal (lo que gastas al mes manteniendo tus mínimos)
-            totalMensual += (producto.cantidadMinima * producto.precioUnitario);
+            // Gasto de mantener la despensa al mínimo ideal siempre
+            totalMensualLleno += (producto.cantidadMinima * producto.precioUnitario);
+
+            // Costo real del carrito (solo lo que falta comprar de los productos que marcas en el checklist)
+            if (producto.comprado && faltaComprar > 0) {
+                costoCarritoCompras += (faltaComprar * producto.precioUnitario);
+            }
 
             const fila = document.createElement('tr');
+            if (producto.comprado) {
+                fila.className = 'fila-comprada';
+            }
+
             fila.innerHTML = `
+                <td class="chk-cell no-strike">
+                    <input type="checkbox" class="chk-box" ${producto.comprado ? 'checked' : ''} onchange="toggleComprado(${index})">
+                </td>
                 <td><strong>${producto.nombre}</strong></td>
                 <td>${producto.cantidadMinima}</td>
                 <td>${producto.cantidadActual}</td>
-                <td><span style="font-weight: bold; color: ${faltaComprar > 0 ? 'var(--warning)' : 'inherit'}">${faltaComprar}</span></td>
+                <td><span style="font-weight: bold; color: ${faltaComprar > 0 && !producto.comprado ? 'var(--warning)' : 'inherit'}">${faltaComprar}</span></td>
                 <td>$${producto.precioUnitario.toLocaleString()}</td>
                 <td><span class="badge ${estadoClase}">${estadoTexto}</span></td>
-                <td><button class="action-btn" onclick="eliminarProducto(${index})">Eliminar</button></td>
+                <td class="chk-cell no-strike">
+                    <button class="action-btn" onclick="eliminarProducto(${index})">✕</button>
+                </td>
             `;
             tabla.appendChild(fila);
         });
 
-        // Actualizar tarjetas de reporte
-        document.getElementById('totalGasto').innerText = `$${totalMensual.toLocaleString()}`;
+        document.getElementById('totalGasto').innerText = `$${totalMensualLleno.toLocaleString()}`;
         document.getElementById('totalFaltantes').innerText = faltantesContador;
+        document.getElementById('totalCarrito').innerText = `$${costoCarritoCompras.toLocaleString()}`;
     }
 
-    // Inicializar al cargar la página
     actualizarApp();
 </script>
 
