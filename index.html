@@ -26,19 +26,34 @@
         
         @media (min-width: 768px) { h1 { font-size: 2rem; text-align: left; } }
         
-        .mes-selector-container {
+        /* Contenedor Superior: Mes y Excel Buttons */
+        .top-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
             background: var(--card);
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
-        .mes-selector-container label { font-weight: bold; color: #0f172a; }
-        .mes-selector-container select { width: auto; flex: 1; max-width: 250px; padding: 8px; }
+        @media (min-width: 768px) {
+            .top-bar { flex-direction: row; align-items: center; justify-content: space-between; }
+        }
 
+        .mes-selector-container { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .mes-selector-container label { font-weight: bold; color: #0f172a; }
+        .mes-selector-container select { width: auto; max-width: 200px; padding: 8px; }
+
+        .excel-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-excel { background: #16a34a; font-size: 0.9rem; padding: 8px 14px; width: auto; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-excel.import { background: #0284c7; }
+        
+        /* Buscador */
+        .search-container { margin-bottom: 15px; }
+        .search-input { padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; background: #ffffff; }
+
+        /* Dashboard */
         .dashboard { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 25px; }
         @media (min-width: 480px) { .dashboard { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 768px) { .dashboard { grid-template-columns: repeat(3, 1fr); } }
@@ -70,13 +85,11 @@
         th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
         th { background: #f1f5f9; color: #475569; font-weight: 600; }
         
-        /* Inputs editables inline */
         .table-input-nombre { padding: 6px; border: 1px solid transparent; background: transparent; font-size: 1rem; font-weight: bold; color: #0f172a; width: 100%; border-radius: 4px; }
         .table-input-nombre:focus { border-color: var(--primary); background: #ffffff; outline: none; }
         .table-input-inline { padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 65px; text-align: center; }
         .table-input-precio { padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 90px; text-align: right; }
         
-        /* Selector de color circular discreto */
         .color-picker-wrapper { display: flex; align-items: center; gap: 6px; }
         .input-color-circle { -webkit-appearance: none; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; background: none; padding: 0; }
         .input-color-circle::-webkit-color-swatch-wrapper { padding: 0; }
@@ -122,24 +135,33 @@
 <div class="container">
     <h1>Inventario Inteligente de Alimentos</h1>
 
-    <div class="mes-selector-container">
-        <label for="mesActivo">Mes de Control:</label>
-        <select id="mesActivo" onchange="cambiarMes()">
-            <option value="2026-01">Enero 2026</option>
-            <option value="2026-02">Febrero 2026</option>
-            <option value="2026-03">Marzo 2026</option>
-            <option value="2026-04">Abril 2026</option>
-            <option value="2026-05">Mayo 2026</option>
-            <option value="2026-06">Junio 2026</option>
-            <option value="2026-07">Julio 2026</option>
-            <option value="2026-08">Agosto 2026</option>
-            <option value="2026-09">Septiembre 2026</option>
-            <option value="2026-10">Octubre 2026</option>
-            <option value="2026-11">Noviembre 2026</option>
-            <option value="2026-12">Diciembre 2026</option>
-        </select>
+    <!-- Barra Superior unificada -->
+    <div class="top-bar">
+        <div class="mes-selector-container">
+            <label for="mesActivo">Mes de Control:</label>
+            <select id="mesActivo" onchange="cambiarMes()">
+                <option value="2026-01">Enero 2026</option>
+                <option value="2026-02">Febrero 2026</option>
+                <option value="2026-03">Marzo 2026</option>
+                <option value="2026-04">Abril 2026</option>
+                <option value="2026-05">Mayo 2026</option>
+                <option value="2026-06">Junio 2026</option>
+                <option value="2026-07">Julio 2026</option>
+                <option value="2026-08">Agosto 2026</option>
+                <option value="2026-09">Septiembre 2026</option>
+                <option value="2026-10">Octubre 2026</option>
+                <option value="2026-11">Noviembre 2026</option>
+                <option value="2026-12">Diciembre 2026</option>
+            </select>
+        </div>
+        <div class="excel-actions">
+            <button class="btn-excel" onclick="exportarExcel()">📊 Exportar datos</button>
+            <button class="btn-excel import" onclick="document.getElementById('inputImport').click()">📥 Importar datos</button>
+            <input type="file" id="inputImport" style="display:none;" accept=".csv, .txt" onchange="importarExcel(this)">
+        </div>
     </div>
 
+    <!-- Indicadores -->
     <div class="dashboard">
         <div class="stat-card">
             <div class="stat-label">Presupuesto Despensa Llena</div>
@@ -198,6 +220,12 @@
         <!-- Panel de visualización Derecha -->
         <div>
             <h2>Inventario & Checklist del Mes</h2>
+            
+            <!-- Barra de Búsqueda -->
+            <div class="search-container">
+                <input type="text" id="buscarProducto" class="search-input" placeholder="🔍 Buscar producto por nombre..." oninput="filtrarProductos()">
+            </div>
+
             <div class="table-container">
                 <!-- Vista Escritorio -->
                 <table>
@@ -224,8 +252,9 @@
 </div>
 
 <script>
-    let productosMaster = JSON.parse(localStorage.getItem('productos_master_v5')) || [];
-    let historialMensual = JSON.parse(localStorage.getItem('historial_mensual_v5')) || {};
+    let productosMaster = JSON.parse(localStorage.getItem('productos_master_v6')) || [];
+    let historialMensual = JSON.parse(localStorage.getItem('historial_mensual_v6')) || {};
+    let filtroBusqueda = "";
 
     const form = document.getElementById('productoForm');
     const tabla = document.getElementById('inventarioTabla');
@@ -240,24 +269,39 @@
 
     function obtenerMesActivo() { return selectMes.value; }
     function cambiarMes() { actualizarApp(); }
+    
+    function filtrarProductos() {
+        filtroBusqueda = document.getElementById('buscarProducto').value.toLowerCase().trim();
+        actualizarApp();
+    }
 
+    // Guardar Producto con bloqueo de duplicados
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const id = 'prod_' + Date.now(); // Identificador único interno para evitar colisiones si se editan nombres
-        const nombre = document.getElementById('nombre').value.trim();
+        const nombreInput = document.getElementById('nombre').value.trim();
+        
+        // REGLA: Verificar duplicados (insensible a mayúsculas/minúsculas)
+        const existeDuplicado = productosMaster.some(p => p.nombre.toLowerCase() === nombreInput.toLowerCase());
+        if (existeDuplicado) {
+            alert(`⚠️ El producto "${nombreInput}" ya existe en la lista. No se permiten registros duplicados.`);
+            document.getElementById('nombre').focus();
+            return;
+        }
+
+        const id = 'prod_' + Date.now();
         const presentacion = document.getElementById('presentacion').value;
         const cantidadMinima = parseFloat(document.getElementById('cantidadMinima').value);
         const cantidadActual = parseFloat(document.getElementById('cantidadActual').value);
         const precioUnitario = parseFloat(document.getElementById('precioUnitario').value) || 0;
         const color = document.getElementById('colorEtiqueta').value || '#ffffff';
 
-        productosMaster.push({ id, nombre, presentacion, cantidadMinima, cantidadActual, precioUnitario, color });
+        productosMaster.push({ id, nombre: nombreInput, presentacion, cantidadMinima, cantidadActual, precioUnitario, color });
 
         const mes = obtenerMesActivo();
         if (!historialMensual[mes]) historialMensual[mes] = {};
         historialMensual[mes][id] = { comprado: false, precio: precioUnitario };
 
-        localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+        localStorage.setItem('productos_master_v6', JSON.stringify(productosMaster));
         actualizarApp();
         form.reset();
         document.getElementById('colorEtiqueta').value = '#ffffff';
@@ -278,11 +322,7 @@
         const index = productosMaster.findIndex(p => p.id === id);
         if (index !== -1) {
             productosMaster[index].nombre = nuevoNombre.trim();
-            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
-            // Sincronizar los textos de los inputs hermanos (escritorio/móvil) sin re-renderizar todo
-            document.querySelectorAll(`.input-name-${id}`).forEach(input => {
-                if (input.value !== nuevoNombre) input.value = nuevoNombre;
-            });
+            localStorage.setItem('productos_master_v6', JSON.stringify(productosMaster));
         }
     }
 
@@ -290,17 +330,8 @@
         const index = productosMaster.findIndex(p => p.id === id);
         if (index !== -1) {
             productosMaster[index].color = nuevoColor;
-            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
-            
-            // Aplicar color dinámicamente a los contenedores
-            const fila = document.getElementById(`fila-t-${id}`);
-            const tarjeta = document.getElementById(`card-m-${id}`);
-            
-            if (fila) fila.style.backgroundColor = nuevoColor + '25'; // Opacidad suave del 15% en tabla
-            if (tarjeta) {
-                tarjeta.style.backgroundColor = nuevoColor + '15';
-                tarjeta.style.borderColor = nuevoColor;
-            }
+            localStorage.setItem('productos_master_v6', JSON.stringify(productosMaster));
+            actualizarApp(); // Re-renderizar para reordenar por color de inmediato
         }
     }
 
@@ -309,7 +340,7 @@
         const index = productosMaster.findIndex(p => p.id === id);
         if (index !== -1) {
             productosMaster[index].cantidadMinima = val;
-            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+            localStorage.setItem('productos_master_v6', JSON.stringify(productosMaster));
             actualizarFaltaYTotalesInline(id);
         }
     }
@@ -319,7 +350,7 @@
         const index = productosMaster.findIndex(p => p.id === id);
         if (index !== -1) {
             productosMaster[index].cantidadActual = val;
-            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+            localStorage.setItem('productos_master_v6', JSON.stringify(productosMaster));
             actualizarFaltaYTotalesInline(id);
         }
     }
@@ -330,7 +361,7 @@
         if (!historialMensual[mes]) historialMensual[mes] = {};
         if (!historialMensual[mes][id]) historialMensual[mes][id] = { comprado: false };
         historialMensual[mes][id].precio = valor;
-        localStorage.setItem('historial_mensual_v5', JSON.stringify(historialMensual));
+        localStorage.setItem('historial_mensual_v6', JSON.stringify(historialMensual));
         recalcularTotales();
     }
 
@@ -360,9 +391,9 @@
     }
 
     function eliminarProducto(id) {
-        if(confirm(`¿Eliminar este producto permanentemente?`)) {
+        if(confirm(`¿Eliminar este producto?`)) {
             productosMaster = productosMaster.filter(p => p.id !== id);
-            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+            localStorage.setItem('productos_master_v6', JSON.stringify(productosMaster));
             for (let mes in historialMensual) {
                 if (historialMensual[mes][id]) delete historialMensual[mes][id];
             }
@@ -401,12 +432,25 @@
     }
 
     function actualizarApp() {
-        localStorage.setItem('historial_mensual_v5', JSON.stringify(historialMensual));
+        localStorage.setItem('historial_mensual_v6', JSON.stringify(historialMensual));
         tabla.innerHTML = '';
         contenedorMovil.innerHTML = '';
         const mes = obtenerMesActivo();
 
-        productosMaster.forEach((producto) => {
+        // REGLA: ORDENAR AUTOMÁTICAMENTE POR COLOR
+        // Los colores se ordenan alfabéticamente por HEX (agrupándolos); los blancos/grises claros van al final
+        let productosOrdenados = [...productosMaster].sort((a, b) => {
+            if (a.color === '#ffffff' && b.color !== '#ffffff') return 1;
+            if (a.color !== '#ffffff' && b.color === '#ffffff') return -1;
+            return a.color.localeCompare(b.color);
+        });
+
+        productosOrdenados.forEach((producto) => {
+            // Filtrar mediante la barra de búsqueda si aplica
+            if (filtroBusqueda && !producto.nombre.toLowerCase().includes(filtroBusqueda)) {
+                return; 
+            }
+
             let faltaComprar = producto.cantidadMinima - producto.cantidadActual;
             if (faltaComprar < 0) faltaComprar = 0;
 
@@ -429,7 +473,7 @@
             if (estaComprado) {
                 fila.className = 'fila-comprada';
             } else if (colorRgb !== '#ffffff') {
-                fila.style.backgroundColor = colorRgb + '25'; // Tinte transparente
+                fila.style.backgroundColor = colorRgb + '25';
             }
 
             fila.innerHTML = `
@@ -439,7 +483,7 @@
                 <td>
                     <div class="color-picker-wrapper">
                         <input type="color" class="input-color-circle no-strike" value="${colorRgb}" onchange="actualizarColorInline('${producto.id}', this.value)">
-                        <input type="text" class="table-input-nombre input-name-${producto.id}" value="${producto.nombre}" oninput="actualizarNombreInline('${producto.id}', this.value)">
+                        <input type="text" class="table-input-nombre input-name-${producto.id}" value="${producto.nombre}" onchange="actualizarNombreInline('${producto.id}', this.value)">
                     </div>
                 </td>
                 <td class="no-strike">
@@ -477,7 +521,7 @@
                     <div class="mobile-card-title-row">
                         <div class="color-picker-wrapper" style="flex:1;">
                             <input type="color" class="input-color-circle no-strike" value="${colorRgb}" onchange="actualizarColorInline('${producto.id}', this.value)">
-                            <input type="text" class="table-input-nombre input-name-${producto.id}" value="${producto.nombre}" oninput="actualizarNombreInline('${producto.id}', this.value)" style="font-size:1.05rem;">
+                            <input type="text" class="table-input-nombre input-name-${producto.id}" value="${producto.nombre}" onchange="actualizarNombreInline('${producto.id}', this.value)" style="font-size:1.05rem;">
                         </div>
                         <span class="badge ${estadoClase} badge-${producto.id}" style="font-size:0.7rem; padding:2px 4px; height:max-content;">${estadoTexto}</span>
                     </div>
@@ -503,6 +547,79 @@
         });
 
         recalcularTotales();
+    }
+
+    // LÓGICA DE EXPORTACIÓN (Genera un archivo CSV universal auto-descargable compatible con Excel)
+    function exportarExcel() {
+        const mes = obtenerMesActivo();
+        let contenidoCsv = "Nombre,Presentacion,Cantidad Minima,Cantidad Actual,Falta,Precio Mes,Comprado (SI/NO),Color Hex\n";
+        
+        productosMaster.forEach(p => {
+            let falta = p.cantidadMinima - p.cantidadActual;
+            if (falta < 0) falta = 0;
+            const datosMes = historialMensual[mes] && historialMensual[mes][p.id];
+            const precio = datosMes ? datosMes.precio : p.precioUnitario;
+            const comprado = datosMes && datosMes.comprado ? "SI" : "NO";
+            
+            // Limpiar comas del nombre por seguridad estructural del CSV
+            let nombreLimpio = p.nombre.replace(/,/g, " ");
+            contenidoCsv += `${nombreLimpio},${p.presentacion},${p.cantidadMinima},${p.cantidadActual},${falta},${precio},${comprado},${p.color}\n`;
+        });
+        
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), contenidoCsv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `Inventario_Abarrotes_${mes}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // LÓGICA DE IMPORTACIÓN (Lee el archivo CSV cargado y alimenta el catálogo maestro sin duplicar)
+    function importarExcel(input) {
+        const archivo = input.files[0];
+        if (!archivo) return;
+        
+        const lector = new FileReader();
+        lector.onload = function(e) {
+            const lineas = e.target.result.split("\n");
+            let importadosContador = 0;
+            const mes = obtenerMesActivo();
+            if (!historialMensual[mes]) historialMensual[mes] = {};
+
+            // Omitir cabecera (index 0)
+            for (let i = 1; i < lineas.length; i++) {
+                let linea = lineas[i].trim();
+                if (!linea) continue;
+                
+                let columnas = linea.split(",");
+                if (columnas.length < 4) continue;
+
+                let nombre = columnas[0].trim();
+                let presentacion = columnas[1].trim() || "un";
+                let cantidadMinima = parseFloat(columnas[2]) || 0;
+                let cantidadActual = parseFloat(columnas[3]) || 0;
+                let precio = parseFloat(columnas[5]) || 0;
+                let color = columnas[7] ? columnas[7].trim() : "#ffffff";
+                let compradoStr = columnas[6] ? columnas[6].trim().toUpperCase() : "NO";
+
+                // Evitar colisión o duplicados durante la importación masiva
+                let existe = productosMaster.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+                
+                if (!existe) {
+                    let id = 'prod_' + (Date.now() + i);
+                    productosMaster.push({ id, nombre, presentacion, cantidadMinima, cantidadActual, precioUnitario: precio, color });
+                    historialMensual[mes][id] = { comprado: (compradoStr === "SI"), precio: precio };
+                    importadosContador++;
+                }
+            }
+            
+            localStorage.setItem('productos_master_v6', JSON.stringify(productosMaster));
+            actualizarApp();
+            alert(`✅ Importación finalizada. Se añadieron ${importadosContador} productos nuevos que no estaban repetidos.`);
+            input.value = ""; // Reset file input
+        };
+        lector.readAsText(archivo, "UTF-8");
     }
 
     actualizarApp();
