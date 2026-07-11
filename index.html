@@ -65,15 +65,23 @@
             .table-container { overflow-x: auto; background: var(--card); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         }
 
-        table { width: 100%; border-collapse: collapse; text-align: left; display: none; min-width: 750px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; display: none; min-width: 800px; }
         @media (min-width: 768px) { table { display: table; } }
         th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
         th { background: #f1f5f9; color: #475569; font-weight: 600; }
         
-        /* Inputs compactos para la lista inline */
+        /* Inputs editables inline */
+        .table-input-nombre { padding: 6px; border: 1px solid transparent; background: transparent; font-size: 1rem; font-weight: bold; color: #0f172a; width: 100%; border-radius: 4px; }
+        .table-input-nombre:focus { border-color: var(--primary); background: #ffffff; outline: none; }
         .table-input-inline { padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 65px; text-align: center; }
         .table-input-precio { padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 90px; text-align: right; }
         
+        /* Selector de color circular discreto */
+        .color-picker-wrapper { display: flex; align-items: center; gap: 6px; }
+        .input-color-circle { -webkit-appearance: none; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; background: none; padding: 0; }
+        .input-color-circle::-webkit-color-swatch-wrapper { padding: 0; }
+        .input-color-circle::-webkit-color-swatch { border: 2px solid #cbd5e1; border-radius: 50%; }
+
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-block; }
         .badge.ok { background: #dcfce7; color: #15803d; }
         .badge.low { background: #fee2e2; color: #b91c1c; }
@@ -83,8 +91,8 @@
         .chk-cell { text-align: center; width: 60px; }
         .chk-box { width: 24px; height: 24px; cursor: pointer; margin: 0 auto; display: block; }
         
-        .fila-comprada { background-color: #f1f5f9 !important; color: #94a3b8; }
-        .fila-comprada strong { color: #94a3b8; }
+        .fila-comprada { background-color: #f1f5f9 !important; color: #94a3b8 !important; }
+        .fila-comprada .table-input-nombre { color: #94a3b8; text-decoration: line-through; }
         .fila-comprada .badge { background: #cbd5e1; color: #64748b; }
         .fila-comprada td:not(.no-strike) { text-decoration: line-through; text-decoration-color: #cbd5e1; }
 
@@ -96,10 +104,10 @@
 
         .mobile-card {
             background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex; align-items: center; gap: 15px; position: relative;
+            display: flex; align-items: center; gap: 15px; position: relative; border-left: 8px solid transparent;
         }
         .mobile-card-content { flex: 1; display: grid; grid-template-columns: 1fr; gap: 6px; }
-        .mobile-card-title { font-size: 1.1rem; font-weight: bold; color: #0f172a; }
+        .mobile-card-title-row { display: flex; align-items: center; gap: 8px; justify-content: space-between; padding-right: 25px; }
         .mobile-card-inline-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--muted); }
         .mobile-card-inline-row label { display: flex; align-items: center; gap: 4px; }
         .mobile-card-inline-row input { width: 65px; padding: 4px; text-align: center; }
@@ -148,7 +156,7 @@
     </div>
 
     <div class="grid-layout">
-        <!-- Formulario Izquierda (Añadir nuevo producto base) -->
+        <!-- Formulario Izquierda -->
         <div class="card">
             <h2>Nuevo Producto</h2>
             <form id="productoForm">
@@ -179,15 +187,19 @@
                     <label>Precio Estimado Base ($)</label>
                     <input type="number" id="precioUnitario" placeholder="Precio inicial" min="0" value="0">
                 </div>
+                <div class="form-group">
+                    <label>Color Temático de Tarjeta</label>
+                    <input type="color" id="colorEtiqueta" value="#ffffff" style="padding:5px; height:45px; cursor:pointer;">
+                </div>
                 <button type="submit">Agregar al Catálogo</button>
             </form>
         </div>
 
-        <!-- Panel de visualización Derecha con edición directa -->
+        <!-- Panel de visualización Derecha -->
         <div>
             <h2>Inventario & Checklist del Mes</h2>
             <div class="table-container">
-                <!-- Vista Escritorio (Tabla Editable) -->
+                <!-- Vista Escritorio -->
                 <table>
                     <thead>
                         <tr>
@@ -204,7 +216,7 @@
                     <tbody id="inventarioTabla"></tbody>
                 </table>
 
-                <!-- Vista Móvil (Tarjetas Editables) -->
+                <!-- Vista Móvil -->
                 <div id="inventarioMovil" class="mobile-list"></div>
             </div>
         </div>
@@ -212,15 +224,14 @@
 </div>
 
 <script>
-    let productosMaster = JSON.parse(localStorage.getItem('productos_master')) || [];
-    let historialMensual = JSON.parse(localStorage.getItem('historial_mensual')) || {};
+    let productosMaster = JSON.parse(localStorage.getItem('productos_master_v5')) || [];
+    let historialMensual = JSON.parse(localStorage.getItem('historial_mensual_v5')) || {};
 
     const form = document.getElementById('productoForm');
     const tabla = document.getElementById('inventarioTabla');
     const contenedorMovil = document.getElementById('inventarioMovil');
     const selectMes = document.getElementById('mesActivo');
 
-    // Inicializar mes actual por año
     const fechaActual = new Date();
     const mesFormateado = fechaActual.getFullYear() + '-' + String(fechaActual.getMonth() + 1).padStart(2, '0');
     if (document.querySelector(`#mesActivo option[value="${mesFormateado}"]`)) {
@@ -232,88 +243,114 @@
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+        const id = 'prod_' + Date.now(); // Identificador único interno para evitar colisiones si se editan nombres
         const nombre = document.getElementById('nombre').value.trim();
         const presentacion = document.getElementById('presentacion').value;
         const cantidadMinima = parseFloat(document.getElementById('cantidadMinima').value);
         const cantidadActual = parseFloat(document.getElementById('cantidadActual').value);
         const precioUnitario = parseFloat(document.getElementById('precioUnitario').value) || 0;
+        const color = document.getElementById('colorEtiqueta').value || '#ffffff';
 
-        const index = productosMaster.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-        
-        if (index !== -1) {
-            productosMaster[index] = { nombre, presentacion, cantidadMinima, cantidadActual, precioUnitario };
-        } else {
-            productosMaster.push({ nombre, presentacion, cantidadMinima, cantidadActual, precioUnitario });
-        }
+        productosMaster.push({ id, nombre, presentacion, cantidadMinima, cantidadActual, precioUnitario, color });
 
         const mes = obtenerMesActivo();
         if (!historialMensual[mes]) historialMensual[mes] = {};
-        if (!historialMensual[mes][nombre]) {
-            historialMensual[mes][nombre] = { comprado: false, precio: precioUnitario };
-        }
+        historialMensual[mes][id] = { comprado: false, precio: precioUnitario };
 
-        localStorage.setItem('productos_master', JSON.stringify(productosMaster));
+        localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
         actualizarApp();
         form.reset();
+        document.getElementById('colorEtiqueta').value = '#ffffff';
     });
 
-    function toggleComprado(nombreProducto) {
+    function toggleComprado(id) {
         const mes = obtenerMesActivo();
         if (!historialMensual[mes]) historialMensual[mes] = {};
-        historialMensual[mes][nombreProducto].comprado = !historialMensual[mes][nombreProducto].comprado;
+        if (!historialMensual[mes][id]) {
+            const prod = productosMaster.find(p => p.id === id);
+            historialMensual[mes][id] = { comprado: false, precio: prod ? prod.precioUnitario : 0 };
+        }
+        historialMensual[mes][id].comprado = !historialMensual[mes][id].comprado;
         actualizarApp();
     }
 
-    // Funciones clave para modificar stock directo desde las listas
-    function actualizarMinimoInline(nombreProducto, nuevoMinimo) {
+    function actualizarNombreInline(id, nuevoNombre) {
+        const index = productosMaster.findIndex(p => p.id === id);
+        if (index !== -1) {
+            productosMaster[index].nombre = nuevoNombre.trim();
+            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+            // Sincronizar los textos de los inputs hermanos (escritorio/móvil) sin re-renderizar todo
+            document.querySelectorAll(`.input-name-${id}`).forEach(input => {
+                if (input.value !== nuevoNombre) input.value = nuevoNombre;
+            });
+        }
+    }
+
+    function actualizarColorInline(id, nuevoColor) {
+        const index = productosMaster.findIndex(p => p.id === id);
+        if (index !== -1) {
+            productosMaster[index].color = nuevoColor;
+            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+            
+            // Aplicar color dinámicamente a los contenedores
+            const fila = document.getElementById(`fila-t-${id}`);
+            const tarjeta = document.getElementById(`card-m-${id}`);
+            
+            if (fila) fila.style.backgroundColor = nuevoColor + '25'; // Opacidad suave del 15% en tabla
+            if (tarjeta) {
+                tarjeta.style.backgroundColor = nuevoColor + '15';
+                tarjeta.style.borderColor = nuevoColor;
+            }
+        }
+    }
+
+    function actualizarMinimoInline(id, nuevoMinimo) {
         const val = parseFloat(nuevoMinimo) || 0;
-        const index = productosMaster.findIndex(p => p.nombre === nombreProducto);
+        const index = productosMaster.findIndex(p => p.id === id);
         if (index !== -1) {
             productosMaster[index].cantidadMinima = val;
-            localStorage.setItem('productos_master', JSON.stringify(productosMaster));
-            actualizarFaltaYTotalesInline(nombreProducto);
+            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+            actualizarFaltaYTotalesInline(id);
         }
     }
 
-    function actualizarActualInline(nombreProducto, nuevoActual) {
+    function actualizarActualInline(id, nuevoActual) {
         const val = parseFloat(nuevoActual) || 0;
-        const index = productosMaster.findIndex(p => p.nombre === nombreProducto);
+        const index = productosMaster.findIndex(p => p.id === id);
         if (index !== -1) {
             productosMaster[index].cantidadActual = val;
-            localStorage.setItem('productos_master', JSON.stringify(productosMaster));
-            actualizarFaltaYTotalesInline(nombreProducto);
+            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
+            actualizarFaltaYTotalesInline(id);
         }
     }
 
-    function actualizarPrecioMes(nombreProducto, nuevoPrecio) {
+    function actualizarPrecioMes(id, nuevoPrecio) {
         const mes = obtenerMesActivo();
         const valor = parseFloat(nuevoPrecio) || 0;
         if (!historialMensual[mes]) historialMensual[mes] = {};
-        historialMensual[mes][nombreProducto].precio = valor;
-        localStorage.setItem('historial_mensual', JSON.stringify(historialMensual));
+        if (!historialMensual[mes][id]) historialMensual[mes][id] = { comprado: false };
+        historialMensual[mes][id].precio = valor;
+        localStorage.setItem('historial_mensual_v5', JSON.stringify(historialMensual));
         recalcularTotales();
     }
 
-    // Calcula dinámicamente el residuo faltante sin redibujar toda la app (evita que el input pierda foco al escribir)
-    function actualizarFaltaYTotalesInline(nombreProducto) {
-        const prod = productosMaster.find(p => p.nombre === nombreProducto);
+    function actualizarFaltaYTotalesInline(id) {
+        const prod = productosMaster.find(p => p.id === id);
         if (!prod) return;
 
         let falta = prod.cantidadMinima - prod.cantidadActual;
         if (falta < 0) falta = 0;
 
-        // Actualizar textos de falta en Escritorio y Móvil
-        const spanFaltaT = document.getElementById(`falta-t-${nombreProducto}`);
-        const spanFaltaM = document.getElementById(`falta-m-${nombreProducto}`);
+        const spanFaltaT = document.getElementById(`falta-t-${id}`);
+        const spanFaltaM = document.getElementById(`falta-m-${id}`);
         if(spanFaltaT) spanFaltaT.innerText = falta;
         if(spanFaltaM) spanFaltaM.innerText = falta;
 
-        // Actualizar Badges de Estado
         const estadoTexto = prod.cantidadActual < prod.cantidadMinima ? 'Falta Stock' : 'Abastecido';
         const estadoClaseQuitar = prod.cantidadActual < prod.cantidadMinima ? 'ok' : 'low';
         const estadoClaseAnadir = prod.cantidadActual < prod.cantidadMinima ? 'low' : 'ok';
 
-        document.querySelectorAll(`.badge-${nombreProducto}`).forEach(b => {
+        document.querySelectorAll(`.badge-${id}`).forEach(b => {
             b.innerText = estadoTexto;
             b.classList.remove(estadoClaseQuitar);
             b.classList.add(estadoClaseAnadir);
@@ -322,12 +359,12 @@
         recalcularTotales();
     }
 
-    function eliminarProducto(nombreProducto) {
-        if(confirm(`¿Eliminar "${nombreProducto}"?`)) {
-            productosMaster = productosMaster.filter(p => p.nombre !== nombreProducto);
-            localStorage.setItem('productos_master', JSON.stringify(productosMaster));
+    function eliminarProducto(id) {
+        if(confirm(`¿Eliminar este producto permanentemente?`)) {
+            productosMaster = productosMaster.filter(p => p.id !== id);
+            localStorage.setItem('productos_master_v5', JSON.stringify(productosMaster));
             for (let mes in historialMensual) {
-                if (historialMensual[mes][nombreProducto]) delete historialMensual[mes][nombreProducto];
+                if (historialMensual[mes][id]) delete historialMensual[mes][id];
             }
             actualizarApp();
         }
@@ -347,8 +384,8 @@
                 faltantesContador++;
             }
 
-            const datosMes = historialMensual[mes] && historialMensual[mes][producto.nombre];
-            const precioEsteMes = datosMes ? datosMes.precio : producto.precioUnitario;
+            const datosMes = historialMensual[mes] && historialMensual[mes][producto.id];
+            const precioEsteMes = (datosMes && datosMes.precio !== undefined) ? datosMes.precio : producto.precioUnitario;
             const estaComprado = datosMes ? datosMes.comprado : false;
 
             totalMensualLleno += (producto.cantidadMinima * precioEsteMes);
@@ -364,7 +401,7 @@
     }
 
     function actualizarApp() {
-        localStorage.setItem('historial_mensual', JSON.stringify(historialMensual));
+        localStorage.setItem('historial_mensual_v5', JSON.stringify(historialMensual));
         tabla.innerHTML = '';
         contenedorMovil.innerHTML = '';
         const mes = obtenerMesActivo();
@@ -376,67 +413,90 @@
             const estadoClase = producto.cantidadActual < producto.cantidadMinima ? 'low' : 'ok';
             const estadoTexto = producto.cantidadActual < producto.cantidadMinima ? 'Falta Stock' : 'Abastecido';
             const uni = producto.presentacion || 'un';
+            const colorRgb = producto.color || '#ffffff';
 
             if (!historialMensual[mes]) historialMensual[mes] = {};
-            if (!historialMensual[mes][producto.nombre]) {
-                historialMensual[mes][producto.nombre] = { comprado: false, precio: producto.precioUnitario };
+            if (!historialMensual[mes][producto.id]) {
+                historialMensual[mes][producto.id] = { comprado: false, precio: producto.precioUnitario };
             }
 
-            const estaComprado = historialMensual[mes][producto.nombre].comprado;
-            const precioEsteMes = historialMensual[mes][producto.nombre].precio;
+            const estaComprado = historialMensual[mes][producto.id].comprado;
+            const precioEsteMes = historialMensual[mes][producto.id].precio;
 
-            // RENDER ESCRITORIO (CAMPOS VALORES EDITABLES INLINE)
+            // RENDER ESCRITORIO
             const fila = document.createElement('tr');
-            if (estaComprado) fila.className = 'fila-comprada';
+            fila.id = `fila-t-${producto.id}`;
+            if (estaComprado) {
+                fila.className = 'fila-comprada';
+            } else if (colorRgb !== '#ffffff') {
+                fila.style.backgroundColor = colorRgb + '25'; // Tinte transparente
+            }
 
             fila.innerHTML = `
                 <td class="chk-cell no-strike">
-                    <input type="checkbox" class="chk-box" ${estaComprado ? 'checked' : ''} onchange="toggleComprado('${producto.nombre}')">
+                    <input type="checkbox" class="chk-box" ${estaComprado ? 'checked' : ''} onchange="toggleComprado('${producto.id}')">
                 </td>
-                <td><strong>${producto.nombre}</strong></td>
+                <td>
+                    <div class="color-picker-wrapper">
+                        <input type="color" class="input-color-circle no-strike" value="${colorRgb}" onchange="actualizarColorInline('${producto.id}', this.value)">
+                        <input type="text" class="table-input-nombre input-name-${producto.id}" value="${producto.nombre}" oninput="actualizarNombreInline('${producto.id}', this.value)">
+                    </div>
+                </td>
                 <td class="no-strike">
-                    <input type="number" class="table-input-inline" value="${producto.cantidadMinima}" min="0" step="any" oninput="actualizarMinimoInline('${producto.nombre}', this.value)"><span class="unit-text">${uni}</span>
+                    <input type="number" class="table-input-inline" value="${producto.cantidadMinima}" min="0" step="any" oninput="actualizarMinimoInline('${producto.id}', this.value)"><span class="unit-text">${uni}</span>
                 </td>
                 <td class="no-strike">
-                    <input type="number" class="table-input-inline" value="${producto.cantidadActual}" min="0" step="any" oninput="actualizarActualInline('${producto.nombre}', this.value)"><span class="unit-text">${uni}</span>
+                    <input type="number" class="table-input-inline" value="${producto.cantidadActual}" min="0" step="any" oninput="actualizarActualInline('${producto.id}', this.value)"><span class="unit-text">${uni}</span>
                 </td>
-                <td><span id="falta-t-${producto.nombre}" style="font-weight: bold;">${faltaComprar}</span><span class="unit-text">${uni}</span></td>
+                <td><span id="falta-t-${producto.id}" style="font-weight: bold;">${faltaComprar}</span><span class="unit-text">${uni}</span></td>
                 <td class="no-strike">
-                    <input type="number" class="table-input-precio" value="${precioEsteMes}" min="0" oninput="actualizarPrecioMes('${producto.nombre}', this.value)">
+                    <input type="number" class="table-input-precio" value="${precioEsteMes}" min="0" oninput="actualizarPrecioMes('${producto.id}', this.value)">
                 </td>
-                <td><span class="badge ${estadoClase} badge-${producto.nombre}">${estadoTexto}</span></td>
+                <td><span class="badge ${estadoClase} badge-${producto.id}">${estadoTexto}</span></td>
                 <td class="chk-cell no-strike">
-                    <button class="action-btn" onclick="eliminarProducto('${producto.nombre}')">✕</button>
+                    <button class="action-btn" onclick="eliminarProducto('${producto.id}')">✕</button>
                 </td>
             `;
             tabla.appendChild(fila);
 
-            // RENDER MÓVIL (TARJETAS TOTALMENTE EDITABLES DESDE PANTALLA TÁCTIL)
+            // RENDER MÓVIL
             const tarjetaMovil = document.createElement('div');
+            tarjetaMovil.id = `card-m-${producto.id}`;
             tarjetaMovil.className = `mobile-card ${estaComprado ? 'fila-comprada' : ''}`;
+            
+            if (!estaComprado && colorRgb !== '#ffffff') {
+                tarjetaMovil.style.backgroundColor = colorRgb + '15';
+                tarjetaMovil.style.borderColor = colorRgb;
+            }
 
             tarjetaMovil.innerHTML = `
                 <div>
-                    <input type="checkbox" class="chk-box" ${estaComprado ? 'checked' : ''} onchange="toggleComprado('${producto.nombre}')">
+                    <input type="checkbox" class="chk-box" ${estaComprado ? 'checked' : ''} onchange="toggleComprado('${producto.id}')">
                 </div>
                 <div class="mobile-card-content">
-                    <div class="mobile-card-title">${producto.nombre} <span class="badge ${estadoClase} badge-${producto.nombre}" style="font-size:0.7rem; padding:2px 4px;">${estadoTexto}</span></div>
+                    <div class="mobile-card-title-row">
+                        <div class="color-picker-wrapper" style="flex:1;">
+                            <input type="color" class="input-color-circle no-strike" value="${colorRgb}" onchange="actualizarColorInline('${producto.id}', this.value)">
+                            <input type="text" class="table-input-nombre input-name-${producto.id}" value="${producto.nombre}" oninput="actualizarNombreInline('${producto.id}', this.value)" style="font-size:1.05rem;">
+                        </div>
+                        <span class="badge ${estadoClase} badge-${producto.id}" style="font-size:0.7rem; padding:2px 4px; height:max-content;">${estadoTexto}</span>
+                    </div>
                     
                     <div class="mobile-card-inline-row no-strike">
-                        <label>Mín:<input type="number" class="table-input-inline" value="${producto.cantidadMinima}" oninput="actualizarMinimoInline('${producto.nombre}', this.value)">${uni}</label>
-                        <label>Stock:<input type="number" class="table-input-inline" value="${producto.cantidadActual}" oninput="actualizarActualInline('${producto.nombre}', this.value)">${uni}</label>
+                        <label>Mín:<input type="number" class="table-input-inline" value="${producto.cantidadMinima}" oninput="actualizarMinimoInline('${producto.id}', this.value)">${uni}</label>
+                        <label>Stock:<input type="number" class="table-input-inline" value="${producto.cantidadActual}" oninput="actualizarActualInline('${producto.id}', this.value)">${uni}</label>
                     </div>
 
                     <div class="mobile-card-details">
-                        Faltan: <span id="falta-m-${producto.nombre}" style="font-weight:bold;">${faltaComprar}</span> ${uni}
+                        Faltan: <span id="falta-m-${producto.id}" style="font-weight:bold;">${faltaComprar}</span> ${uni}
                     </div>
                     <div class="mobile-card-price-row no-strike">
                         <span>Precio ($):</span>
-                        <input type="number" class="table-input-precio" value="${precioEsteMes}" min="0" oninput="actualizarPrecioMes('${producto.nombre}', this.value)">
+                        <input type="number" class="table-input-precio" value="${precioEsteMes}" min="0" oninput="actualizarPrecioMes('${producto.id}', this.value)">
                     </div>
                 </div>
                 <div class="mobile-card-action">
-                    <button class="action-btn" onclick="eliminarProducto('${producto.nombre}')">✕</button>
+                    <button class="action-btn" onclick="eliminarProducto('${producto.id}')">✕</button>
                 </div>
             `;
             contenedorMovil.appendChild(tarjetaMovil);
